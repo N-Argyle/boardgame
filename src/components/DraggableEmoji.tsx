@@ -73,13 +73,29 @@ export function DraggableEmoji({
 
   return (
     <div
-      className="fixed select-none cursor-move"
+      className="fixed select-none cursor-move backdrop-blur-md bg-white/30 rounded-md px-1 py-2 border border-black"
+
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
+        boxShadow: "0 1px 2px 0 rgba(32, 54, 70, 0.3)",
       }}
       onMouseDown={handleMouseDown}
     >
+     
+      <div 
+        className="text-6xl text-center leading-none h-min"
+        style={{
+          textShadow: `
+            -1px -1px 0 #fff,  
+             1px -1px 0 #fff,
+            -1px  1px 0 #fff,
+             1px  1px 0 #fff
+          `
+        }}
+      >
+        {emoji}
+      </div>
       {isEditing ? (
         <input
           type="text"
@@ -87,20 +103,17 @@ export function DraggableEmoji({
           onChange={handleLabelChange}
           onBlur={handleLabelBlur}
           onKeyDown={handleKeyDown}
-          className="block w-full text-center px-2 py-1 text-black font-bold bg-white rounded shadow-sm"
+          className="block w-full text-center px-2 text-black font-bold bg-white rounded shadow-sm"
           autoFocus
         />
       ) : (
         <div 
           onClick={handleLabelClick}
-          className="text-center px-2 text-black bg-white rounded shadow-sm mb-1"
+          className="text-center px-2 text-black  rounded shadow-sm -mb-1"
         >
           {label}
         </div>
       )}
-      <div className="text-6xl text-center">
-        {emoji}
-      </div>
     </div>
   );
 }

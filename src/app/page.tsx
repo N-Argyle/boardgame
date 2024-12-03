@@ -41,9 +41,9 @@ export default function HomePage() {
         </div>
       </div>
       <img src="/board.png" alt="board" className="w-[calc(100vw-300px)] max-h-screen" />
-      <DraggableEmoji emoji="🪭" initialLabel="Player 1" initialX={100} initialY={100} />
-      <DraggableEmoji emoji="🚲" initialLabel="Player 2" initialX={100} initialY={150} />
-      <DraggableEmoji emoji="🏎️" initialLabel="Player 3" initialX={100} initialY={200} />
+      <DraggableEmoji emoji="🎁" initialLabel="Player 1" initialX={100} initialY={100} />
+      <DraggableEmoji emoji="🚀" initialLabel="Player 2" initialX={100} initialY={150} />
+      <DraggableEmoji emoji="🎄" initialLabel="Player 3" initialX={100} initialY={200} />
     </main>
   );
 }
