@@ -1,119 +1,87 @@
-import { useState, type MouseEvent, useEffect } from "react";
+import { useDraggable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
+import { useState } from 'react';
+import { useAtom } from 'jotai';
+import { piecesPositionAtom } from '~/atoms/gameState';
 
 interface DraggableEmojiProps {
   emoji: string;
-  initialX?: number;
-  initialY?: number;
-  initialLabel?: string;
+  initialLabel: string;
+  id: string;
+  animate?: boolean;
 }
 
-export function DraggableEmoji({ 
-  emoji, 
-  initialX = 0, 
-  initialY = 0,
-  initialLabel = "Label" 
-}: DraggableEmojiProps) {
-  const [position, setPosition] = useState({ x: initialX, y: initialY });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [label, setLabel] = useState(initialLabel);
-  const [isEditing, setIsEditing] = useState(false);
+const OFFSET_AMOUNT = 30;
+const BASE_OFFSET = -32;
+const BASE_Z_INDEX = 1000;
 
-  const handleMouseDown = (e: MouseEvent) => {
-    setIsDragging(true);
-    setDragOffset({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
-    });
+export function DraggableEmoji({ emoji, initialLabel, id, animate = false }: DraggableEmojiProps) {
+  const [positions, setPositions] = useAtom(piecesPositionAtom);
+  const [zIndex, setZIndex] = useState(BASE_Z_INDEX);
+  
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: id,
+    data: {
+      type: 'emoji',
+      label: initialLabel,
+      emoji
+    }
+  });
+
+  const position = positions.find(p => p.id === id);
+  const style = transform ? {
+    transform: CSS.Translate.toString(transform),
+    zIndex: zIndex,
+  } : {
+    zIndex: zIndex,
   };
 
-  useEffect(() => {
-    const handleMouseMove = (e: globalThis.MouseEvent) => {
-      if (isDragging) {
-        setPosition({
-          x: e.clientX - dragOffset.x,
-          y: e.clientY - dragOffset.y,
+  if (position) {
+    const tileElement = document.querySelector(`[data-tile="${position.tileId}"]`);
+    if (tileElement) {
+      const rect = tileElement.getBoundingClientRect();
+      const elementWidth = 80;
+      const elementHeight = 80;
+      
+      const centerX = rect.left + (rect.width - elementWidth) / 2;
+      const centerY = rect.top + (rect.height - elementHeight) / 2;
+      
+      const piecesOnTile = positions.filter(p => p.tileId === position.tileId);
+      const stackOffset = piecesOnTile.length > 1 ? BASE_OFFSET : 0;
+      
+      const offsetX = position.order * OFFSET_AMOUNT + stackOffset;
+      const offsetY = position.order * OFFSET_AMOUNT + stackOffset;
+
+      const updatedStyle = {
+        ...style,
+        position: 'absolute' as const,
+        left: `${centerX + offsetX}px`,
+        top: `${centerY + offsetY}px`
+      };
+      Object.assign(style, updatedStyle);
+      if (animate) {
+        Object.assign(style, {
+          transition: 'all 0.5s ease-in-out'
         });
       }
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    // Add event listeners to window
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, dragOffset]);
-
-  const handleLabelClick = (e: MouseEvent) => {
-    e.stopPropagation();
-    setIsEditing(true);
-  };
-
-  const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLabel(e.target.value);
-  };
-
-  const handleLabelBlur = () => {
-    setIsEditing(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      setIsEditing(false);
     }
-  };
+  }
 
   return (
     <div
-      className="fixed select-none cursor-move backdrop-blur-md bg-white/30 rounded-md px-1 py-2 border border-black"
-
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        boxShadow: "0 1px 2px 0 rgba(32, 54, 70, 0.3)",
-      }}
-      onMouseDown={handleMouseDown}
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      data-piece-id={id}
+      className="absolute select-none cursor-move z-10 backdrop-blur-md bg-white/30 rounded-md px-1 py-2 border border-black"
+      style={style}
     >
-     
-      <div 
-        className="text-6xl text-center leading-none h-min"
-        style={{
-          textShadow: `
-            -1px -1px 0 #fff,  
-             1px -1px 0 #fff,
-            -1px  1px 0 #fff,
-             1px  1px 0 #fff
-          `
-        }}
-      >
+      <div className="text-6xl text-center leading-none">
         {emoji}
       </div>
-      {isEditing ? (
-        <input
-          type="text"
-          value={label}
-          onChange={handleLabelChange}
-          onBlur={handleLabelBlur}
-          onKeyDown={handleKeyDown}
-          className="block w-full text-center px-2 text-black font-bold bg-white rounded shadow-sm"
-          autoFocus
-        />
-      ) : (
-        <div 
-          onClick={handleLabelClick}
-          className="text-center px-2 text-black  rounded shadow-sm -mb-1"
-        >
-          {label}
-        </div>
-      )}
+      <div className="text-center px-2 text-black rounded shadow-sm">
+        {initialLabel}
+      </div>
     </div>
   );
 }
